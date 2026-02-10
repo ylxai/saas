@@ -10,22 +10,31 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, email } = body;
+    const { name, username, password } = body;
 
-    if (!name || !email) {
+    if (!name || !username) {
       return NextResponse.json(
-        { success: false, error: 'Name dan email diperlukan' },
+        { success: false, error: 'Name dan username diperlukan' },
         { status: 400 }
       );
     }
 
-    const { rows } = await query(
-      `UPDATE ${TABLES.CLIENTS}
-       SET name = $1, email = $2
-       WHERE id = $3
-       RETURNING id, name, email, api_key, created_at`,
-      [name, email, id]
-    );
+    let updateSql = `UPDATE ${TABLES.CLIENTS}
+       SET name = $1, username = $2`;
+    const queryParams: (string | null)[] = [name, username];
+
+    if (password) {
+      const bcrypt = await import('bcryptjs');
+      const passwordHash = await bcrypt.hash(password, 10);
+      updateSql += `, password_hash = $3`;
+      queryParams.push(passwordHash);
+    }
+
+    updateSql += ` WHERE id = $${queryParams.length + 1}
+       RETURNING id, name, username, api_key, created_at`;
+    queryParams.push(id);
+
+    const { rows } = await query(updateSql, queryParams);
 
     if (rows.length === 0) {
       return NextResponse.json(
@@ -43,7 +52,7 @@ export async function PUT(
 
     if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
       return NextResponse.json(
-        { success: false, error: 'Email sudah digunakan' },
+        { success: false, error: 'Username sudah digunakan' },
         { status: 400 }
       );
     }

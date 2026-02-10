@@ -1,28 +1,7 @@
 // app/api/auth/login/route.ts
 import { NextRequest } from 'next/server';
-import { Client } from '@/types';
-import { validateClient } from '@/utils/validation';
 import { checkRateLimit, getClientIdentifier } from '@/lib/rateLimiter';
-
-// Mock data untuk contoh dengan password hash
-const mockClients: Array<Client & { passwordHash: string }> = [
-  {
-    id: 'client-1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    apiKey: 'api-key-1',
-    createdAt: new Date(),
-    passwordHash: 'password123', // TODO: Use bcrypt hash in production
-  },
-  {
-    id: 'client-2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    apiKey: 'api-key-2',
-    createdAt: new Date(),
-    passwordHash: 'password456', // TODO: Use bcrypt hash in production
-  },
-];
+import { query, TABLES } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,13 +26,13 @@ export async function POST(request: NextRequest) {
       });
     }
     const body = await request.json();
-    const { email, password } = body;
+    const { username, password } = body;
 
     // Validasi input sederhana
-    if (!email || !password) {
+    if (!username || !password) {
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Email and password are required' 
+        error: 'Username and password are required' 
       }), {
         status: 400,
         headers: {
@@ -62,8 +41,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Verifikasi kredensial dengan database/mock data
-    const client = mockClients.find(c => c.email === email);
+    // Verifikasi kredensial dengan database
+    const { rows } = await query(
+      `SELECT id, name, username, password_hash FROM ${TABLES.CLIENTS} WHERE username = $1`,
+      [username]
+    );
+
+    const client = rows[0];
 
     if (!client) {
       return new Response(JSON.stringify({
@@ -77,8 +61,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Verifikasi password (dalam produksi gunakan bcrypt.compare)
-    if (password !== client.passwordHash) {
+    // Verifikasi password
+    const bcrypt = await import('bcryptjs');
+    const isValid = await bcrypt.compare(password, client.password_hash);
+
+    if (!isValid) {
       return new Response(JSON.stringify({
         success: false,
         error: 'Invalid credentials'
@@ -100,7 +87,7 @@ export async function POST(request: NextRequest) {
       client: {
         id: client.id,
         name: client.name,
-        email: client.email,
+        username: client.username,
       }
     }), {
       status: 200,

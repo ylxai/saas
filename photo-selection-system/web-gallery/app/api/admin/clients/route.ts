@@ -9,11 +9,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
 
-    let sql = `SELECT id, name, email, api_key, created_at FROM ${TABLES.CLIENTS}`;
+    let sql = `SELECT id, name, username, api_key, created_at FROM ${TABLES.CLIENTS}`;
     const params: string[] = [];
 
     if (search) {
-      sql += ` WHERE name ILIKE $1 OR email ILIKE $1`;
+      sql += ` WHERE name ILIKE $1 OR username ILIKE $1`;
       params.push(`%${search}%`);
     }
 
@@ -38,11 +38,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email } = body;
+    const { name, username, password } = body;
 
-    if (!name || !email) {
+    if (!name || !username || !password) {
       return NextResponse.json(
-        { success: false, error: 'Name dan email diperlukan' },
+        { success: false, error: 'Name, username, dan password diperlukan' },
         { status: 400 }
       );
     }
@@ -50,11 +50,14 @@ export async function POST(request: NextRequest) {
     // Generate API key
     const apiKey = `sk_${randomUUID().replace(/-/g, '')}`;
 
+    const bcrypt = await import('bcryptjs');
+    const passwordHash = await bcrypt.hash(password, 10);
+
     const { rows } = await query(
-      `INSERT INTO ${TABLES.CLIENTS} (name, email, api_key)
-       VALUES ($1, $2, $3)
-       RETURNING id, name, email, api_key, created_at`,
-      [name, email, apiKey]
+      `INSERT INTO ${TABLES.CLIENTS} (name, username, password_hash, email, api_key)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, name, username, api_key, created_at`,
+      [name, username, passwordHash, null, apiKey]
     );
 
     return NextResponse.json({
@@ -66,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
       return NextResponse.json(
-        { success: false, error: 'Email sudah digunakan' },
+        { success: false, error: 'Username sudah digunakan' },
         { status: 400 }
       );
     }

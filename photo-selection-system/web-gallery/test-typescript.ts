@@ -31,16 +31,14 @@ console.log(result);
 import { z } from 'zod';
 
 const UserSchema = z.object({
-  username: z.string().min(3).max(20),
-  email: z.string().email(),
+  username: z.string().min(1),
   age: z.number().min(0).max(120),
 });
 
 type User = z.infer<typeof UserSchema>;
 
 const userData = {
-  username: "johndoe",
-  email: "john@example.com",
+  username: "john_doe",
   age: 30,
 };
 

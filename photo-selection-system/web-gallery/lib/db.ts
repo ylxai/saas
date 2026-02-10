@@ -65,7 +65,9 @@ export async function initializeSchema() {
     `CREATE TABLE IF NOT EXISTS ${TABLES.CLIENTS} (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name VARCHAR(255) NOT NULL,
-      email VARCHAR(255) UNIQUE NOT NULL,
+      username VARCHAR(50) UNIQUE,
+      password_hash VARCHAR(255),
+      email VARCHAR(255) UNIQUE,
       api_key VARCHAR(255) UNIQUE NOT NULL,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );`,
@@ -107,6 +109,10 @@ export async function initializeSchema() {
     `CREATE INDEX IF NOT EXISTS idx_files_is_selected ON ${TABLES.FILES}(is_selected);`,
     `CREATE INDEX IF NOT EXISTS idx_selections_client_id ON ${TABLES.SELECTIONS}(client_id);`,
     `CREATE INDEX IF NOT EXISTS idx_selections_status ON ${TABLES.SELECTIONS}(status);`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_username ON ${TABLES.CLIENTS}(username);`,
+    `ALTER TABLE ${TABLES.CLIENTS} ADD COLUMN IF NOT EXISTS username VARCHAR(50);`,
+    `ALTER TABLE ${TABLES.CLIENTS} ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);`,
+    `ALTER TABLE ${TABLES.CLIENTS} ALTER COLUMN email DROP NOT NULL;`,
   ];
 
   for (const queryText of schemaQueries) {

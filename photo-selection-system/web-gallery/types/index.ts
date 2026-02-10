@@ -24,7 +24,7 @@ export interface Event {
 export interface Client {
   id: string;
   name: string;
-  email: string;
+  username: string;
   apiKey: string;
   createdAt: Date;
 }

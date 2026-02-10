@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 interface Client {
   id: string;
   name: string;
-  email: string;
+  username: string;
   api_key: string;
   created_at: string;
 }
@@ -18,7 +18,7 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [formData, setFormData] = useState({ name: '', email: '' });
+  const [formData, setFormData] = useState({ name: '', username: '', password: '' });
   const [modalError, setModalError] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
   const router = useRouter();
@@ -58,14 +58,14 @@ export default function AdminDashboard() {
 
   const openCreateModal = () => {
     setEditingClient(null);
-    setFormData({ name: '', email: '' });
+    setFormData({ name: '', username: '', password: '' });
     setModalError('');
     setShowModal(true);
   };
 
   const openEditModal = (client: Client) => {
     setEditingClient(client);
-    setFormData({ name: client.name, email: client.email });
+    setFormData({ name: client.name, username: client.username, password: '' });
     setModalError('');
     setShowModal(true);
   };
@@ -73,7 +73,7 @@ export default function AdminDashboard() {
   const closeModal = () => {
     setShowModal(false);
     setEditingClient(null);
-    setFormData({ name: '', email: '' });
+    setFormData({ name: '', username: '', password: '' });
     setModalError('');
   };
 
@@ -171,7 +171,7 @@ export default function AdminDashboard() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari client..."
+              placeholder="Cari nama/username..."
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
             />
             <button
@@ -209,7 +209,7 @@ export default function AdminDashboard() {
                       Nama
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
+                      Username
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       API Key
@@ -229,7 +229,7 @@ export default function AdminDashboard() {
                         {client.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {client.email}
+                        {client.username}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <button
@@ -296,15 +296,29 @@ export default function AdminDashboard() {
 
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
+                  Username
                 </label>
                 <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  type="text"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="email@client.com"
+                  placeholder="username"
                   required
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Password {editingClient ? '(kosongkan jika tidak diubah)' : ''}
+                </label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={editingClient ? 'Kosongkan jika tidak diubah' : 'Password'}
+                  required={!editingClient}
                 />
               </div>
 

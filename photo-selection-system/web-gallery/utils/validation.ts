@@ -29,7 +29,7 @@ export const EventSchema = z.object({
 export const ClientSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1),
-  email: z.string().email(),
+  username: z.string().min(1),
   apiKey: z.string().min(1),
   createdAt: z.date(),
 });
