@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Daftar path yang tidak memerlukan autentikasi
-const publicPaths = ['/', '/api/auth/login', '/api/setup', '/setup'];
+const publicPaths = ['/', '/login', '/api/auth/login', '/api/setup', '/setup'];
 
 export function middleware(request: NextRequest) {
   // Jika path adalah publik, lanjutkan tanpa autentikasi
@@ -10,13 +10,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Untuk implementasi lengkap, Anda akan memeriksa token di sini
-  // const token = request.cookies.get('auth_token')?.value || request.headers.get('Authorization');
-  
-  // Contoh sederhana: jika tidak ada token, redirect ke login
-  // if (!token) {
-  //   return NextResponse.redirect(new URL('/login', request.url));
-  // }
+  // Periksa token di localStorage via cookie (client-side) atau header
+  const token = request.cookies.get('auth_token')?.value || request.headers.get('Authorization');
+
+  // Jika tidak ada token, redirect ke login
+  if (!token) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
 
   // Jika semua lolos, lanjutkan ke halaman
   return NextResponse.next();

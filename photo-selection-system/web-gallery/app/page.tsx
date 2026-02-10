@@ -3,19 +3,21 @@
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useGalleryStore } from '@/store/galleryStore';
 import { GalleryHeader } from '@/components/GalleryHeader';
 import { PhotoGrid } from '@/components/PhotoGrid';
 import { PhotoFilters } from '@/components/PhotoFilters';
+import { SelectedPhotosList } from '@/components/SelectedPhotosList';
+import { useGalleryStore } from '@/store/galleryStore';
 
 export default function Home() {
   const router = useRouter();
-  const { 
-    fetchEvents, 
-    fetchPhotos, 
-    currentEventId, 
-    isLoading, 
-    error 
+  const {
+    fetchEvents,
+    fetchPhotos,
+    currentEventId,
+    isLoading,
+    error,
+    selectedPhotos
   } = useGalleryStore();
 
   // Cek apakah pengguna sudah login
@@ -27,14 +29,18 @@ export default function Home() {
     } else {
       // Jika ada token, lanjutkan ke dashboard
       // Fetch events saat komponen dimuat
-      fetchEvents();
-      
+      fetchEvents().catch((err) => {
+        console.error('Failed to fetch events:', err);
+      });
+
       // Jika ada event yang dipilih, fetch photonya
       if (currentEventId) {
-        fetchPhotos(currentEventId);
+        fetchPhotos(currentEventId).catch((err) => {
+          console.error('Failed to fetch photos:', err);
+        });
       }
     }
-  }, [currentEventId]);
+  }, [currentEventId, fetchEvents, fetchPhotos, router]);
 
   if (isLoading && !currentEventId) {
     return (
@@ -77,8 +83,13 @@ export default function Home() {
       <main className="py-6 px-4 sm:px-6 max-w-7xl mx-auto">
         <PhotoFilters />
         
-        <div className="mt-6">
-          <PhotoGrid />
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-3">
+            <PhotoGrid />
+          </div>
+          <div className="lg:col-span-1">
+            <SelectedPhotosList selectedPhotoIds={selectedPhotos} />
+          </div>
         </div>
       </main>
     </div>

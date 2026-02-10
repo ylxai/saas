@@ -20,27 +20,11 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const file = files[0];
-    setError(null);
-    setIsUploading(true);
-    setUploadProgress(0);
+  const uploadSingleFile = async (file: File, totalFiles: number, currentIndex: number): Promise<boolean> => {
+    const singleFileProgress = (currentIndex / totalFiles) * 100;
+    setUploadProgress(Math.round(singleFileProgress));
 
     try {
-      // Simulasi progress upload
-      const interval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 95) {
-            clearInterval(interval);
-            return prev;
-          }
-          return prev + 5;
-        });
-      }, 200);
-
       // Buat FormData untuk dikirim
       const formData = new FormData();
       formData.append('file', file);
@@ -53,20 +37,49 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         body: formData,
       });
 
-      clearInterval(interval);
-      setUploadProgress(100);
-
       const result = await response.json();
 
-      if (result.success) {
+      if (!result.success) {
+        throw new Error(result.error || `Failed to upload ${file.name}`);
+      }
+
+      return true;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileArray = Array.from(files);
+    setError(null);
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Upload semua file secara parallel
+      const uploadPromises = fileArray.map((file, index) => 
+        uploadSingleFile(file, fileArray.length, index)
+      );
+
+      const results = await Promise.all(uploadPromises);
+      const successCount = results.filter(Boolean).length;
+
+      setUploadProgress(100);
+
+      if (successCount === fileArray.length) {
         onUploadSuccess?.();
       } else {
-        setError(result.error || 'Upload failed');
-        onUploadError?.(result.error || 'Upload failed');
+        const errorMsg = `Uploaded ${successCount} of ${fileArray.length} files`;
+        setError(errorMsg);
+        onUploadError?.(errorMsg);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during upload');
-      onUploadError?.(err instanceof Error ? err.message : 'An error occurred during upload');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred during upload';
+      setError(errorMessage);
+      onUploadError?.(errorMessage);
     } finally {
       setIsUploading(false);
       // Reset input file

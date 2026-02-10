@@ -3,14 +3,15 @@ import { NextRequest } from 'next/server';
 import { Client } from '@/types';
 import { validateClient } from '@/utils/validation';
 
-// Mock data untuk contoh
-const mockClients: Client[] = [
+// Mock data untuk contoh dengan password hash
+const mockClients: Array<Client & { passwordHash: string }> = [
   {
     id: 'client-1',
     name: 'John Doe',
     email: 'john@example.com',
     apiKey: 'api-key-1',
     createdAt: new Date(),
+    passwordHash: 'password123', // TODO: Use bcrypt hash in production
   },
   {
     id: 'client-2',
@@ -18,6 +19,7 @@ const mockClients: Client[] = [
     email: 'jane@example.com',
     apiKey: 'api-key-2',
     createdAt: new Date(),
+    passwordHash: 'password456', // TODO: Use bcrypt hash in production
   },
 ];
 
@@ -39,14 +41,26 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Dalam implementasi sebenarnya, ini akan memverifikasi kredensial dengan database
-    // Untuk contoh, kita hanya akan mencocokkan email
+    // Verifikasi kredensial dengan database/mock data
     const client = mockClients.find(c => c.email === email);
-    
+
     if (!client) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Invalid credentials' 
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid credentials'
+      }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    // Verifikasi password (dalam produksi gunakan bcrypt.compare)
+    if (password !== client.passwordHash) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid credentials'
       }), {
         status: 401,
         headers: {

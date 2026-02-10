@@ -1,68 +1,15 @@
 {
   "extends": [
-    "next/core-web-vitals",
-    "airbnb",
-    "airbnb/hooks",
-    "airbnb-typescript",
-    "prettier"
-  ],
-  "parser": "@typescript-eslint/parser",
-  "parserOptions": {
-    "project": "./tsconfig.json"
-  },
-  "plugins": [
-    "@typescript-eslint",
-    "import",
-    "jsx-a11y",
-    "react",
-    "react-hooks"
+    "next/core-web-vitals"
   ],
   "rules": {
     "react/jsx-props-no-spreading": "off",
     "react/prop-types": "off",
     "react/react-in-jsx-scope": "off",
-    "react/jsx-fragments": "off",
     "react/require-default-props": "off",
     "react/display-name": "error",
-    "@typescript-eslint/no-use-before-define": "off",
-    "react/jsx-no-useless-fragment": "off",
-    "react/no-unstable-nested-components": "off",
-    "react/jsx-key": "off",
-    "react/self-closing-comp": "off",
-    "react/jsx-props-no-multi-spaces": "off",
-    "react/jsx-max-props-per-line": [
-      1,
-      {
-        "maximum": 1,
-        "when": "multiline"
-      }
-    ],
-    "react/function-component-definition": [
-      2,
-      {
-        "namedComponents": "arrow-function",
-        "unnamedComponents": "arrow-function"
-      }
-    ],
-    "react/jsx-sort-props": [
-      "error",
-      {
-        "callbacksLast": true,
-        "shorthandFirst": true,
-        "multiline": "last",
-        "reservedFirst": true
-      }
-    ],
     "import/prefer-default-export": "off",
-    "react/jsx-uses-react": "off",
-    "react/react-in-jsx-scope": "off",
-    "react/jsx-fragments": "off",
-    "@typescript-eslint/no-unused-vars": "warn",
-    "@typescript-eslint/no-explicit-any": "warn",
-    "prefer-template": "error",
-    "@typescript-eslint/consistent-type-imports": "error",
-    "@typescript-eslint/no-floating-promises": "error",
-    "react/hook-use-state": "error"
+    "prefer-template": "error"
   },
   "env": {
     "browser": true,

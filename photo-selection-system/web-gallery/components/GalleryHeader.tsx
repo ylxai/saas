@@ -14,10 +14,20 @@ export const GalleryHeader: React.FC = () => {
     selectAllPhotos, 
     deselectAllPhotos,
     exportSelection,
-    isLoading
+    isLoading,
+    setError
   } = useGalleryStore();
 
   const currentEvent = events.find(event => event.id === currentEventId);
+
+  const handleExport = async () => {
+    try {
+      await exportSelection();
+    } catch (err) {
+      // Error sudah di-handle di store, tapi kita bisa log di sini jika perlu
+      console.error('Export failed:', err);
+    }
+  };
 
   return (
     <header className="bg-white shadow-sm py-4 px-6 sticky top-0 z-10">
@@ -60,7 +70,7 @@ export const GalleryHeader: React.FC = () => {
           </div>
 
           <Button
-            onClick={exportSelection}
+            onClick={handleExport}
             disabled={selectedPhotos.length === 0 || isLoading}
             className="whitespace-nowrap"
           >

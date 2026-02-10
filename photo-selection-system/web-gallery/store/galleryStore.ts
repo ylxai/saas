@@ -95,7 +95,8 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
       
       set({ photos: result.data?.photos || [], isLoading: false });
     } catch (error) {
-      set({ error: (error as Error).message, isLoading: false });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch photos';
+      set({ error: errorMessage, isLoading: false });
     }
   },
 
@@ -110,7 +111,8 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
       
       set({ events: result.data?.events || [], isLoading: false });
     } catch (error) {
-      set({ error: (error as Error).message, isLoading: false });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch events';
+      set({ error: errorMessage, isLoading: false });
     }
   },
 
@@ -142,7 +144,8 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
       // Reset selected photos after successful export
       set({ selectedPhotos: [], isLoading: false });
     } catch (error) {
-      set({ error: (error as Error).message, isLoading: false });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to export selection';
+      set({ error: errorMessage, isLoading: false });
     }
   }
 }));

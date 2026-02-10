@@ -62,8 +62,8 @@ const Lightbox: React.FC<LightboxProps> = ({
           const lightboxItems = lightboxDiv.querySelectorAll('.lightbox-item');
           if (startIndex < lightboxItems.length) {
             const targetLink = lightboxItems[startIndex] as HTMLAnchorElement;
-            // Membuka lightbox dengan elemen target
-            window.Lightbox.initialize();
+            // Trigger click pada elemen target untuk membuka lightbox
+            targetLink.click();
           }
         }
       }, 100);
@@ -100,6 +100,7 @@ const Lightbox: React.FC<LightboxProps> = ({
           data-lightbox="gallery"
           style={{ display: 'none' }}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img 
             src={photo.thumbnailUrl || photo.url} 
             alt={photo.filename} 

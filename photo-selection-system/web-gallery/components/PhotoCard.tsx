@@ -24,9 +24,9 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({ photo }) => {
   };
 
   const handleOpenLightbox = () => {
-    // Di sini kita akan mengimplementasikan pembukaan lightbox
-    // untuk saat ini, kita hanya toggle seleksi
-    togglePhotoSelection(photo.id);
+    // TODO: Implementasikan pembukaan lightbox
+    // Untuk saat ini, buka gambar di tab baru sebagai fallback
+    window.open(photo.url, '_blank');
   };
 
   return (

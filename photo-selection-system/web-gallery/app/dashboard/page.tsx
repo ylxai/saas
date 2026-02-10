@@ -20,12 +20,12 @@ export default function DashboardPage() {
   useEffect(() => {
     // Fetch events saat komponen dimuat
     fetchEvents();
-    
+
     // Jika ada event yang dipilih, fetch photonya
     if (currentEventId) {
       fetchPhotos(currentEventId);
     }
-  }, [currentEventId]);
+  }, [currentEventId, fetchEvents, fetchPhotos]);
 
   if (isLoading && !currentEventId) {
     return (
