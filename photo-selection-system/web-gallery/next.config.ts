@@ -7,8 +7,12 @@ const nextConfig: NextConfig = {
   images: {
     domains: ['r2.cloudflarestorage.com'], // Ganti dengan domain R2 Anda
     formats: ['image/webp', 'image/avif'],
-    // Hapus batasan ukuran upload
-    bodySizeLimit: '500mb',
+  },
+  // Hapus batasan ukuran body untuk upload
+  api: {
+    bodyParser: {
+      sizeLimit: '500mb',
+    },
   },
   env: {
     DATABASE_URL: process.env.DATABASE_URL,
