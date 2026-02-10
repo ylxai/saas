@@ -9,9 +9,11 @@ import { cn } from '@/lib/utils';
 
 interface PhotoCardProps {
   photo: Photo;
+  onPhotoClick?: (photo: Photo) => void;
+  priority?: boolean;
 }
 
-export const PhotoCard: React.FC<PhotoCardProps> = React.memo(({ photo }) => {
+export const PhotoCard: React.FC<PhotoCardProps> = React.memo(({ photo, onPhotoClick, priority = false }) => {
   const { togglePhotoSelection, selectedPhotos } = useGalleryStore();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -19,42 +21,44 @@ export const PhotoCard: React.FC<PhotoCardProps> = React.memo(({ photo }) => {
   const isSelected = selectedPhotos.includes(photo.id);
 
   const handleToggleSelection = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Mencegah pembukaan lightbox saat toggle seleksi
+    e.stopPropagation();
     togglePhotoSelection(photo.id);
   };
 
-  const handleOpenLightbox = () => {
-    // TODO: Implementasikan pembukaan lightbox
-    // Untuk saat ini, buka gambar di tab baru sebagai fallback
-    window.open(photo.url, '_blank');
+  const handleClick = () => {
+    onPhotoClick?.(photo);
   };
 
   return (
     <div 
       className={cn(
-        "relative group overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200",
-        "bg-white aspect-square cursor-pointer",
+        "relative group overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-all duration-300",
+        "bg-gray-100 cursor-pointer mb-4 break-inside-avoid",
         isSelected ? "ring-2 ring-blue-500 ring-offset-2" : ""
       )}
-      onClick={handleOpenLightbox}
+      onClick={handleClick}
     >
-      {/* Gambar */}
+      {/* Gambar - Masonry style dengan aspect ratio asli */}
       {!imageError ? (
-        <Image
-          src={photo.thumbnailUrl || photo.url}
-          alt={photo.filename}
-          fill
-          className={cn(
-            "object-cover transition-opacity duration-200",
-            imageLoaded ? "opacity-100" : "opacity-0"
-          )}
-          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-          onLoad={() => setImageLoaded(true)}
-          onError={() => setImageError(true)}
-          priority={false}
-        />
+        <div className="relative w-full" style={{ aspectRatio: 'auto' }}>
+          <Image
+            src={photo.thumbnailUrl || photo.url}
+            alt={photo.filename}
+            width={400}
+            height={300}
+            className={cn(
+              "w-full h-auto object-cover transition-opacity duration-300",
+              imageLoaded ? "opacity-100" : "opacity-0"
+            )}
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageError(true)}
+            priority={priority}
+            unoptimized
+          />
+        </div>
       ) : (
-        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+        <div className="w-full aspect-square flex items-center justify-center bg-gray-100">
           <span className="text-gray-500 text-sm">Image unavailable</span>
         </div>
       )}

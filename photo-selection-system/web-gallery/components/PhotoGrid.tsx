@@ -1,13 +1,17 @@
 // components/PhotoGrid.tsx
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useGalleryStore } from '@/store/galleryStore';
 import { PhotoCard } from './PhotoCard';
+import { Lightbox } from './Lightbox';
+import { Photo } from '@/types';
 import Masonry from 'react-masonry-css';
 
 export const PhotoGrid: React.FC = () => {
   const { photos, currentEventId, filters } = useGalleryStore();
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   // Filter photos dengan useMemo untuk mencegah re-filter pada setiap render
   const filteredPhotos = useMemo(() => {
@@ -48,10 +52,21 @@ export const PhotoGrid: React.FC = () => {
   // Konfigurasi untuk masonry layout
   const breakpointColumnsObj = {
     default: 4,
+    1400: 4,
     1100: 3,
     700: 2,
     500: 1,
   };
+
+  const handlePhotoClick = useCallback((photo: Photo) => {
+    const index = filteredPhotos.findIndex(p => p.id === photo.id);
+    setCurrentPhotoIndex(index >= 0 ? index : 0);
+    setLightboxOpen(true);
+  }, [filteredPhotos]);
+
+  const handleCloseLightbox = useCallback(() => {
+    setLightboxOpen(false);
+  }, []);
 
   if (filteredPhotos.length === 0) {
     return (
@@ -67,14 +82,43 @@ export const PhotoGrid: React.FC = () => {
   }
 
   return (
-    <Masonry
-      breakpointCols={breakpointColumnsObj}
-      className="my-masonry-grid"
-      columnClassName="my-masonry-grid_column"
-    >
-      {filteredPhotos.map((photo) => (
-        <PhotoCard key={photo.id} photo={photo} />
-      ))}
-    </Masonry>
+    <>
+      <style jsx global>{`
+        .my-masonry-grid {
+          display: flex;
+          margin-left: -16px;
+          width: auto;
+        }
+        .my-masonry-grid_column {
+          padding-left: 16px;
+          background-clip: padding-box;
+        }
+        .my-masonry-grid_column > div {
+          margin-bottom: 16px;
+        }
+      `}</style>
+      <Masonry
+        breakpointCols={breakpointColumnsObj}
+        className="my-masonry-grid"
+        columnClassName="my-masonry-grid_column"
+      >
+        {filteredPhotos.map((photo, index) => (
+          <PhotoCard 
+            key={photo.id} 
+            photo={photo} 
+            onPhotoClick={handlePhotoClick}
+            priority={index < 8}
+          />
+        ))}
+      </Masonry>
+      
+      <Lightbox
+        photos={filteredPhotos}
+        currentIndex={currentPhotoIndex}
+        isOpen={lightboxOpen}
+        onClose={handleCloseLightbox}
+        onNavigate={setCurrentPhotoIndex}
+      />
+    </>
   );
 };
