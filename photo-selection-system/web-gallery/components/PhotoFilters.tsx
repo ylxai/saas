@@ -5,6 +5,7 @@ import React from 'react';
 import { useGalleryStore } from '@/store/galleryStore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './Select';
 import { Input } from './Input';
+import { sanitizeInput, isValidSearchTerm } from '@/lib/sanitize';
 
 export const PhotoFilters: React.FC = () => {
   const { 
@@ -28,7 +29,14 @@ export const PhotoFilters: React.FC = () => {
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters({ searchTerm: e.target.value });
+    const rawValue = e.target.value;
+    // Sanitize input to prevent XSS
+    const sanitizedValue = sanitizeInput(rawValue);
+    
+    // Only update if valid search term pattern
+    if (isValidSearchTerm(sanitizedValue)) {
+      setFilters({ searchTerm: sanitizedValue });
+    }
   };
 
   return (

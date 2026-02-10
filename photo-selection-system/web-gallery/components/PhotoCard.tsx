@@ -11,7 +11,7 @@ interface PhotoCardProps {
   photo: Photo;
 }
 
-export const PhotoCard: React.FC<PhotoCardProps> = ({ photo }) => {
+export const PhotoCard: React.FC<PhotoCardProps> = React.memo(({ photo }) => {
   const { togglePhotoSelection, selectedPhotos } = useGalleryStore();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -137,4 +137,6 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({ photo }) => {
       </div>
     </div>
   );
-};
+});
+
+PhotoCard.displayName = 'PhotoCard';

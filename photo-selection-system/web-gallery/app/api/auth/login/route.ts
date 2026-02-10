@@ -2,6 +2,7 @@
 import { NextRequest } from 'next/server';
 import { Client } from '@/types';
 import { validateClient } from '@/utils/validation';
+import { checkRateLimit, getClientIdentifier } from '@/lib/rateLimiter';
 
 // Mock data untuk contoh dengan password hash
 const mockClients: Array<Client & { passwordHash: string }> = [
@@ -25,6 +26,26 @@ const mockClients: Array<Client & { passwordHash: string }> = [
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 5 login attempts per 15 minutes per IP
+    const clientId = getClientIdentifier(request);
+    const rateLimit = checkRateLimit(`login:${clientId}`, {
+      maxRequests: 5,
+      windowMs: 15 * 60 * 1000, // 15 minutes
+    });
+
+    if (!rateLimit.allowed) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Too many login attempts. Please try again later.',
+      }), {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+          'X-RateLimit-Reset': rateLimit.resetTime.toString(),
+        },
+      });
+    }
     const body = await request.json();
     const { email, password } = body;
 

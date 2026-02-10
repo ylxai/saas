@@ -1,7 +1,7 @@
 // components/PhotoGrid.tsx
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useGalleryStore } from '@/store/galleryStore';
 import { PhotoCard } from './PhotoCard';
 import Masonry from 'react-masonry-css';
@@ -9,39 +9,41 @@ import Masonry from 'react-masonry-css';
 export const PhotoGrid: React.FC = () => {
   const { photos, currentEventId, filters } = useGalleryStore();
 
-  // Filter photos berdasarkan currentEventId dan filters
-  const filteredPhotos = photos.filter(photo => {
-    // Filter berdasarkan event
-    if (currentEventId && photo.eventId !== currentEventId) {
-      return false;
-    }
-
-    // Filter berdasarkan file type
-    if (filters.fileType && filters.fileType !== 'ALL') {
-      if (photo.fileType !== filters.fileType) {
+  // Filter photos dengan useMemo untuk mencegah re-filter pada setiap render
+  const filteredPhotos = useMemo(() => {
+    return photos.filter(photo => {
+      // Filter berdasarkan event
+      if (currentEventId && photo.eventId !== currentEventId) {
         return false;
       }
-    }
 
-    // Filter berdasarkan status seleksi
-    if (filters.status && filters.status !== 'all') {
-      if (filters.status === 'selected' && !photo.isSelected) {
-        return false;
+      // Filter berdasarkan file type
+      if (filters.fileType && filters.fileType !== 'ALL') {
+        if (photo.fileType !== filters.fileType) {
+          return false;
+        }
       }
-      if (filters.status === 'unselected' && photo.isSelected) {
-        return false;
-      }
-    }
 
-    // Filter berdasarkan search term
-    if (filters.searchTerm) {
-      if (!photo.filename.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
-        return false;
+      // Filter berdasarkan status seleksi
+      if (filters.status && filters.status !== 'all') {
+        if (filters.status === 'selected' && !photo.isSelected) {
+          return false;
+        }
+        if (filters.status === 'unselected' && photo.isSelected) {
+          return false;
+        }
       }
-    }
 
-    return true;
-  });
+      // Filter berdasarkan search term
+      if (filters.searchTerm) {
+        if (!photo.filename.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [photos, currentEventId, filters]);
 
   // Konfigurasi untuk masonry layout
   const breakpointColumnsObj = {
