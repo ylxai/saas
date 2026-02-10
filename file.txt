@@ -1,0 +1,14 @@
+postgresql://neondb_owner:npg_TO73ZYSgPtsL@ep-bold-field-a1pdd10d-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+
+
+ably token : eyJ0eXAiOiJKV1QiLCJ2ZXJzaW9uIjoxLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI0OWY1MjgxMS1iOGJjLTQ5YzctYmU5NS0yZDJmNjdkZTcxMGIiLCJpc3MiOiJhYmx5LmNvbSIsImlhdCI6MTc3MDcyNTU5NCwic3ViIjo5MTQ3NX0.BbXcpZ7c36In8nSpitp-_uW85MetdmejrnjrAczLxAA
+
+ably apikey : 6LnEEQ.EKyOgA:4ZHq1DGsXGs-TpqE7OKHDBDXrWIMK5OMgzz3Nv0BPLQ
+
+UPSTASH_REDIS_REST_URL="https://willing-manatee-52139.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="AcurAAIncDIyZGE5NjIyNWZkMjc0NzVkYmIzYjZhMDU2NjI2MGViMHAyNTIxMzk"
+
+QSTASH_URL="https://qstash-eu-central-1.upstash.io"
+QSTASH_TOKEN="eyJVc2VySUQiOiI2YWUxZWQwNC0zMWFmLTQ2NTMtYTg1MS1mNjQ5M2VmMWYyYjgiLCJQYXNzd29yZCI6IjExMjY0YzZlNWNlNDRkYzdhNTQ0MjQ1MDYwZDc2NDE2In0="
+QSTASH_CURRENT_SIGNING_KEY="sig_6NVXAL8g59sMzyvm5HNYKf26BiEP"
+QSTASH_NEXT_SIGNING_KEY="sig_5dNd2WPov2iLMkpXhD1WCYVAKb7X"

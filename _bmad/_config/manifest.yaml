@@ -1,0 +1,17 @@
+installation:
+  version: 6.0.0-Beta.8
+  installDate: 2026-02-10T13:59:45.763Z
+  lastUpdated: 2026-02-10T13:59:45.763Z
+modules:
+  - name: core
+    version: 6.0.0-Beta.8
+    installDate: 2026-02-10T13:59:45.763Z
+    lastUpdated: 2026-02-10T13:59:45.763Z
+    source: built-in
+    npmPackage: null
+    repoUrl: null
+ides:
+  - rovo-dev
+  - claude-code
+  - qwen
+  - opencode
