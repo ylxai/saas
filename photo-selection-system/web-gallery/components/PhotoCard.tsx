@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Photo } from '@/types';
 import { useGalleryStore } from '@/store/galleryStore';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { cn } from '@/lib/utils';
 
 interface PhotoCardProps {
@@ -17,6 +18,11 @@ export const PhotoCard: React.FC<PhotoCardProps> = React.memo(({ photo, onPhotoC
   const { togglePhotoSelection, selectedPhotos } = useGalleryStore();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [imageRef, isInView] = useIntersectionObserver<HTMLDivElement>({
+    threshold: 0.1,
+    rootMargin: '200px', // Start loading 200px before entering viewport
+    triggerOnce: true,
+  });
 
   const isSelected = selectedPhotos.includes(photo.id);
 
@@ -31,15 +37,29 @@ export const PhotoCard: React.FC<PhotoCardProps> = React.memo(({ photo, onPhotoC
 
   return (
     <div 
+      ref={imageRef}
       className={cn(
         "relative group overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-all duration-300",
-        "bg-gray-100 cursor-pointer mb-4 break-inside-avoid",
+        "bg-gray-100 cursor-pointer mb-4 break-inside-avoid min-h-[150px]",
         isSelected ? "ring-2 ring-blue-500 ring-offset-2" : ""
       )}
       onClick={handleClick}
     >
-      {/* Gambar - Masonry style dengan aspect ratio asli */}
-      {!imageError ? (
+      {/* Lazy loading placeholder */}
+      {!isInView && !priority && (
+        <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
+          <svg 
+            className="w-8 h-8 text-gray-300" 
+            fill="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+          </svg>
+        </div>
+      )}
+
+      {/* Gambar - Lazy loaded dengan Intersection Observer */}
+      {!imageError && (isInView || priority) ? (
         <div className="relative w-full" style={{ aspectRatio: 'auto' }}>
           <Image
             src={photo.thumbnailUrl || photo.url}
@@ -47,21 +67,22 @@ export const PhotoCard: React.FC<PhotoCardProps> = React.memo(({ photo, onPhotoC
             width={400}
             height={300}
             className={cn(
-              "w-full h-auto object-cover transition-opacity duration-300",
+              "w-full h-auto object-cover transition-opacity duration-500",
               imageLoaded ? "opacity-100" : "opacity-0"
             )}
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
             priority={priority}
+            loading={priority ? "eager" : "lazy"}
             unoptimized
           />
         </div>
-      ) : (
+      ) : imageError ? (
         <div className="w-full aspect-square flex items-center justify-center bg-gray-100">
           <span className="text-gray-500 text-sm">Image unavailable</span>
         </div>
-      )}
+      ) : null}
 
       {/* Overlay saat hover */}
       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">

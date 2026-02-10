@@ -1,17 +1,21 @@
 // components/PhotoGrid.tsx
 'use client';
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useGalleryStore } from '@/store/galleryStore';
 import { PhotoCard } from './PhotoCard';
 import { Lightbox } from './Lightbox';
 import { Photo } from '@/types';
 import Masonry from 'react-masonry-css';
 
+const ITEMS_PER_PAGE = 24; // Load 24 photos initially, then more on scroll
+
 export const PhotoGrid: React.FC = () => {
   const { photos, currentEventId, filters } = useGalleryStore();
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Filter photos dengan useMemo untuk mencegah re-filter pada setiap render
   const filteredPhotos = useMemo(() => {
@@ -48,6 +52,42 @@ export const PhotoGrid: React.FC = () => {
       return true;
     });
   }, [photos, currentEventId, filters]);
+
+  // Reset visible count saat filter berubah
+  useEffect(() => {
+    setVisibleCount(ITEMS_PER_PAGE);
+  }, [filters, currentEventId]);
+
+  // Infinite scroll implementation
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isLoadingMore) return;
+      
+      const scrollHeight = document.documentElement.scrollHeight;
+      const scrollTop = document.documentElement.scrollTop;
+      const clientHeight = document.documentElement.clientHeight;
+      
+      // Load more when within 300px of bottom
+      if (scrollTop + clientHeight >= scrollHeight - 300) {
+        if (visibleCount < filteredPhotos.length) {
+          setIsLoadingMore(true);
+          // Simulate small delay to prevent rapid firing
+          setTimeout(() => {
+            setVisibleCount(prev => Math.min(prev + ITEMS_PER_PAGE, filteredPhotos.length));
+            setIsLoadingMore(false);
+          }, 100);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [visibleCount, filteredPhotos.length, isLoadingMore]);
+
+  // Photos yang ditampilkan (lazy loaded batch)
+  const visiblePhotos = useMemo(() => {
+    return filteredPhotos.slice(0, visibleCount);
+  }, [filteredPhotos, visibleCount]);
 
   // Konfigurasi untuk masonry layout
   const breakpointColumnsObj = {
@@ -97,12 +137,17 @@ export const PhotoGrid: React.FC = () => {
           margin-bottom: 16px;
         }
       `}</style>
+      
+      <div className="mb-4 text-sm text-gray-600">
+        Showing {visiblePhotos.length} of {filteredPhotos.length} photos
+      </div>
+
       <Masonry
         breakpointCols={breakpointColumnsObj}
         className="my-masonry-grid"
         columnClassName="my-masonry-grid_column"
       >
-        {filteredPhotos.map((photo, index) => (
+        {visiblePhotos.map((photo, index) => (
           <PhotoCard 
             key={photo.id} 
             photo={photo} 
@@ -111,6 +156,25 @@ export const PhotoGrid: React.FC = () => {
           />
         ))}
       </Masonry>
+
+      {/* Loading indicator */}
+      {isLoadingMore && (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      )}
+
+      {/* Load more button (fallback) */}
+      {visibleCount < filteredPhotos.length && !isLoadingMore && (
+        <div className="flex justify-center py-8">
+          <button
+            onClick={() => setVisibleCount(prev => Math.min(prev + ITEMS_PER_PAGE, filteredPhotos.length))}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Load More ({filteredPhotos.length - visibleCount} remaining)
+          </button>
+        </div>
+      )}
       
       <Lightbox
         photos={filteredPhotos}
