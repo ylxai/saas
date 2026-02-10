@@ -1,6 +1,11 @@
 // scripts/setup.ts
-import 'dotenv/config';
-import { initializeSchema, seedAdminUser } from '../lib/db';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const dotenv = require('dotenv');
+
+dotenv.config({ path: '.env.local' });
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { initializeSchema, seedAdminUser } = require('../lib/db');
 
 async function main() {
   try {

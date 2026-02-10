@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "setup-db": "ts-node -r tsconfig-paths/register scripts/setup.ts"
+    "setup-db": "ts-node --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' scripts/setup.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.986.0",
