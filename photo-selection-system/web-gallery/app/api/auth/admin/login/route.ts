@@ -1,6 +1,7 @@
 // app/api/auth/admin/login/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { query, TABLES, seedAdminUser } from '@/lib/db';
+import { SignJWT } from 'jose';
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,13 +44,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create token (simple base64 for demo - in production use JWT)
-    const token = Buffer.from(JSON.stringify({
+    const secret = process.env.ADMIN_JWT_SECRET;
+
+    if (!secret) {
+      return NextResponse.json(
+        { success: false, error: 'ADMIN_JWT_SECRET is not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Create JWT token
+    const secretKey = new TextEncoder().encode(secret);
+    const token = await new SignJWT({
       id: admin.id,
       username: admin.username,
-      role: 'admin',
-      exp: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
-    })).toString('base64');
+      role: 'admin'
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('24h')
+      .sign(secretKey);
 
     const response = NextResponse.json({
       success: true,

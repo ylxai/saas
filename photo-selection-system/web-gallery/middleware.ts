@@ -1,5 +1,6 @@
 // middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
 
 // Daftar path yang tidak memerlukan autentikasi (client routes)
 const publicClientPaths = ['/', '/login', '/api/auth/login', '/api/setup', '/setup'];
@@ -8,7 +9,7 @@ const publicClientPaths = ['/', '/login', '/api/auth/login', '/api/setup', '/set
 const protectedAdminRoutes = ['/admin'];
 const adminApiRoutes = ['/api/admin'];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Jika path adalah publik untuk client, lanjutkan tanpa autentikasi
@@ -42,28 +43,22 @@ export function middleware(request: NextRequest) {
 
     // Verify token
     try {
-      const tokenData = JSON.parse(Buffer.from(adminToken, 'base64').toString());
+      const secret = process.env.ADMIN_JWT_SECRET;
 
-      // Check jika token expired
-      if (tokenData.exp && Date.now() > tokenData.exp) {
-        // Token expired, clear dan redirect ke login
-        const response = isAdminApiRoute
-          ? NextResponse.json({ success: false, error: 'Token expired' }, { status: 401 })
-          : NextResponse.redirect(new URL('/admin/login', request.url));
-
-        response.cookies.set('admin_token', '', {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 0,
-          path: '/'
-        });
-
-        return response;
+      if (!secret) {
+        return NextResponse.json(
+          { success: false, error: 'ADMIN_JWT_SECRET is not configured' },
+          { status: 500 }
+        );
       }
 
+      const { payload } = await jwtVerify(
+        adminToken,
+        new TextEncoder().encode(secret)
+      );
+
       // Verify role
-      if (tokenData.role !== 'admin') {
+      if (payload.role !== 'admin') {
         if (isAdminRoute) {
           return NextResponse.redirect(new URL('/admin/login', request.url));
         }
