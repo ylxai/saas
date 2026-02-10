@@ -1,36 +1,112 @@
 // middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-// Daftar path yang tidak memerlukan autentikasi
-const publicPaths = ['/', '/login', '/api/auth/login', '/api/setup', '/setup'];
+// Daftar path yang tidak memerlukan autentikasi (client routes)
+const publicClientPaths = ['/', '/login', '/api/auth/login', '/api/setup', '/setup'];
+
+// Routes yang memerlukan autentikasi admin
+const protectedAdminRoutes = ['/admin'];
+const adminApiRoutes = ['/api/admin'];
 
 export function middleware(request: NextRequest) {
-  // Jika path adalah publik, lanjutkan tanpa autentikasi
-  if (publicPaths.some(path => request.nextUrl.pathname.startsWith(path))) {
+  const { pathname } = request.nextUrl;
+
+  // Jika path adalah publik untuk client, lanjutkan tanpa autentikasi
+  if (publicClientPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.next();
   }
 
-  // Periksa token di localStorage via cookie (client-side) atau header
-  const token = request.cookies.get('auth_token')?.value || request.headers.get('Authorization');
+  // Check if it's a protected admin route
+  const isAdminRoute = protectedAdminRoutes.some(route => pathname.startsWith(route));
+  const isAdminApiRoute = adminApiRoutes.some(route => pathname.startsWith(route));
 
-  // Jika tidak ada token, redirect ke login
-  if (!token) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  if (isAdminRoute || isAdminApiRoute) {
+    // Skip auth check untuk login page itself
+    if (pathname === '/admin/login') {
+      return NextResponse.next();
+    }
+
+    // Get admin token dari cookies
+    const adminToken = request.cookies.get('admin_token')?.value;
+
+    if (!adminToken) {
+      // Redirect ke login untuk pages, return 401 untuk API
+      if (isAdminRoute) {
+        return NextResponse.redirect(new URL('/admin/login', request.url));
+      }
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Verify token
+    try {
+      const tokenData = JSON.parse(Buffer.from(adminToken, 'base64').toString());
+
+      // Check jika token expired
+      if (tokenData.exp && Date.now() > tokenData.exp) {
+        // Token expired, clear dan redirect ke login
+        const response = isAdminApiRoute
+          ? NextResponse.json({ success: false, error: 'Token expired' }, { status: 401 })
+          : NextResponse.redirect(new URL('/admin/login', request.url));
+
+        response.cookies.set('admin_token', '', {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 0,
+          path: '/'
+        });
+
+        return response;
+      }
+
+      // Verify role
+      if (tokenData.role !== 'admin') {
+        if (isAdminRoute) {
+          return NextResponse.redirect(new URL('/admin/login', request.url));
+        }
+        return NextResponse.json(
+          { success: false, error: 'Unauthorized' },
+          { status: 403 }
+        );
+      }
+    } catch {
+      // Invalid token
+      const response = isAdminApiRoute
+        ? NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 })
+        : NextResponse.redirect(new URL('/admin/login', request.url));
+
+      response.cookies.set('admin_token', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 0,
+        path: '/'
+      });
+
+      return response;
+    }
   }
 
-  // Jika semua lolos, lanjutkan ke halaman
+  // Untuk route lain (non-admin), cek client auth token
+  const clientToken = request.cookies.get('auth_token')?.value || request.headers.get('Authorization');
+
+  if (!clientToken) {
+    // Redirect ke login untuk page routes
+    if (!isAdminRoute && !isAdminApiRoute && !pathname.startsWith('/api/')) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
+    '/admin/:path*',
+    '/api/admin/:path*',
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };

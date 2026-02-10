@@ -9,10 +9,10 @@ export function getDbPool(): Pool {
     if (!config.database.url) {
       throw new Error('DATABASE_URL is not defined in environment variables');
     }
-    
+
     pool = new Pool({ connectionString: config.database.url });
   }
-  
+
   return pool;
 }
 
@@ -34,11 +34,20 @@ export const TABLES = {
   CLIENTS: 'clients',
   SELECTIONS: 'selections',
   PROCESSING_LOG: 'processing_log',
+  ADMIN_USERS: 'admin_users',
 };
 
 // Fungsi untuk inisialisasi skema database
 export async function initializeSchema() {
   const schemaQueries = [
+    // Tabel admin_users
+    `CREATE TABLE IF NOT EXISTS ${TABLES.ADMIN_USERS} (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      username VARCHAR(50) UNIQUE NOT NULL,
+      password_hash VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );`,
+
     // Tabel events
     `CREATE TABLE IF NOT EXISTS ${TABLES.EVENTS} (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -51,7 +60,7 @@ export async function initializeSchema() {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );`,
-    
+
     // Tabel clients
     `CREATE TABLE IF NOT EXISTS ${TABLES.CLIENTS} (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -60,7 +69,7 @@ export async function initializeSchema() {
       api_key VARCHAR(255) UNIQUE NOT NULL,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );`,
-    
+
     // Tabel files
     `CREATE TABLE IF NOT EXISTS ${TABLES.FILES} (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -73,7 +82,7 @@ export async function initializeSchema() {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );`,
-    
+
     // Tabel selections
     `CREATE TABLE IF NOT EXISTS ${TABLES.SELECTIONS} (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -82,7 +91,7 @@ export async function initializeSchema() {
       selected_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed'))
     );`,
-    
+
     // Tabel processing_log
     `CREATE TABLE IF NOT EXISTS ${TABLES.PROCESSING_LOG} (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -92,7 +101,7 @@ export async function initializeSchema() {
       status VARCHAR(20) NOT NULL CHECK (status IN ('success', 'failed', 'in-progress')),
       details TEXT
     );`,
-    
+
     // Index untuk performa
     `CREATE INDEX IF NOT EXISTS idx_files_event_id ON ${TABLES.FILES}(event_id);`,
     `CREATE INDEX IF NOT EXISTS idx_files_is_selected ON ${TABLES.FILES}(is_selected);`,
@@ -103,4 +112,17 @@ export async function initializeSchema() {
   for (const queryText of schemaQueries) {
     await query(queryText);
   }
+}
+
+// Fungsi untuk seed admin user
+export async function seedAdminUser() {
+  const bcrypt = await import('bcryptjs');
+  const passwordHash = await bcrypt.hash('klp123', 10);
+
+  await query(
+    `INSERT INTO ${TABLES.ADMIN_USERS} (username, password_hash)
+     VALUES ($1, $2)
+     ON CONFLICT (username) DO UPDATE SET password_hash = $2`,
+    ['nandika', passwordHash]
+  );
 }
