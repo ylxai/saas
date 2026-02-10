@@ -19,6 +19,7 @@ export const EventSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1),
   clientName: z.string().min(1),
+  clientId: z.string().uuid().optional(),
   date: z.date(),
   folderPath: z.string().min(1),
   status: z.enum(['active', 'archived', 'completed']).default('active'),

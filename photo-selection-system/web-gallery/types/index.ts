@@ -15,6 +15,7 @@ export interface Event {
   id: string;
   name: string;
   clientName: string;
+  clientId?: string;
   date: Date;
   folderPath: string;
   status: 'active' | 'archived' | 'completed';

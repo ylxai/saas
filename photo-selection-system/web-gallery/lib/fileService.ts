@@ -10,9 +10,17 @@ import sharp from 'sharp';
 export async function createEvent(eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>): Promise<Event | null> {
   try {
     const { rows } = await query(
-      `INSERT INTO ${TABLES.EVENTS} (name, client_name, date, folder_path, status, photo_count) 
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [eventData.name, eventData.clientName, eventData.date, eventData.folderPath, eventData.status, eventData.photoCount]
+      `INSERT INTO ${TABLES.EVENTS} (name, client_name, client_id, date, folder_path, status, photo_count) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [
+        eventData.name,
+        eventData.clientName,
+        eventData.clientId || null,
+        eventData.date,
+        eventData.folderPath,
+        eventData.status,
+        eventData.photoCount,
+      ]
     );
 
     return rows[0] as Event;
@@ -34,6 +42,23 @@ export async function getAllEvents(): Promise<Event[]> {
     return rows as Event[];
   } catch (error) {
     console.error('Error fetching events:', error);
+    return [];
+  }
+}
+
+/**
+ * Ambil semua event untuk klien tertentu
+ */
+export async function getEventsByClientId(clientId: string): Promise<Event[]> {
+  try {
+    const { rows } = await query(
+      `SELECT * FROM ${TABLES.EVENTS} WHERE client_id = $1 ORDER BY created_at DESC`,
+      [clientId]
+    );
+
+    return rows as Event[];
+  } catch (error) {
+    console.error('Error fetching events by client:', error);
     return [];
   }
 }
@@ -86,6 +111,27 @@ export async function getFilesByEventId(eventId: string): Promise<Photo[]> {
     return rows as Photo[];
   } catch (error) {
     console.error('Error fetching files:', error);
+    return [];
+  }
+}
+
+/**
+ * Ambil semua file untuk event tertentu milik klien tertentu
+ */
+export async function getFilesByEventIdForClient(eventId: string, clientId: string): Promise<Photo[]> {
+  try {
+    const { rows } = await query(
+      `SELECT f.*
+       FROM ${TABLES.FILES} f
+       JOIN ${TABLES.EVENTS} e ON e.id = f.event_id
+       WHERE f.event_id = $1 AND e.client_id = $2
+       ORDER BY f.created_at ASC`,
+      [eventId, clientId]
+    );
+
+    return rows as Photo[];
+  } catch (error) {
+    console.error('Error fetching files by event and client:', error);
     return [];
   }
 }

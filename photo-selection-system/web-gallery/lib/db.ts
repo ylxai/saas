@@ -53,6 +53,7 @@ export async function initializeSchema() {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name VARCHAR(255) NOT NULL,
       client_name VARCHAR(255) NOT NULL,
+      client_id UUID,
       date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       folder_path TEXT NOT NULL,
       status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'archived', 'completed')),
@@ -113,6 +114,8 @@ export async function initializeSchema() {
     `ALTER TABLE ${TABLES.CLIENTS} ADD COLUMN IF NOT EXISTS username VARCHAR(50);`,
     `ALTER TABLE ${TABLES.CLIENTS} ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);`,
     `ALTER TABLE ${TABLES.CLIENTS} ALTER COLUMN email DROP NOT NULL;`,
+    `ALTER TABLE ${TABLES.EVENTS} ADD COLUMN IF NOT EXISTS client_id UUID;`,
+    `CREATE INDEX IF NOT EXISTS idx_events_client_id ON ${TABLES.EVENTS}(client_id);`,
   ];
 
   for (const queryText of schemaQueries) {

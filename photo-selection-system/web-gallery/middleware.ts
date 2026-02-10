@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
 // Daftar path yang tidak memerlukan autentikasi (client routes)
-const publicClientPaths = ['/', '/login', '/api/auth/login', '/api/setup', '/setup'];
+const publicClientPaths = ['/', '/login', '/api/auth/login'];
 
 // Routes yang memerlukan autentikasi admin
 const protectedAdminRoutes = ['/admin'];

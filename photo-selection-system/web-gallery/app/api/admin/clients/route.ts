@@ -2,10 +2,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, TABLES } from '@/lib/db';
 import { randomUUID } from 'crypto';
+import { checkRateLimit, getClientIdentifier } from '@/lib/rateLimiter';
 
 // GET - List all clients
 export async function GET(request: NextRequest) {
   try {
+    const clientId = getClientIdentifier(request);
+    const rateLimit = checkRateLimit(`admin:clients:get:${clientId}`, {
+      maxRequests: 60,
+      windowMs: 60 * 1000,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Too many requests' },
+        { status: 429 }
+      );
+    }
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
 
@@ -37,6 +50,18 @@ export async function GET(request: NextRequest) {
 // POST - Create new client
 export async function POST(request: NextRequest) {
   try {
+    const clientId = getClientIdentifier(request);
+    const rateLimit = checkRateLimit(`admin:clients:post:${clientId}`, {
+      maxRequests: 20,
+      windowMs: 60 * 1000,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Too many requests' },
+        { status: 429 }
+      );
+    }
     const body = await request.json();
     const { name, username, password } = body;
 

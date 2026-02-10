@@ -2,6 +2,7 @@
 import { NextRequest } from 'next/server';
 import { checkRateLimit, getClientIdentifier } from '@/lib/rateLimiter';
 import { query, TABLES } from '@/lib/db';
+import { SignJWT } from 'jose';
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,10 +78,32 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Dalam implementasi sebenarnya, Anda akan membuat token JWT di sini
-    const token = `mock-token-${client.id}`;
+    const secret = process.env.CLIENT_JWT_SECRET;
+
+    if (!secret) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'CLIENT_JWT_SECRET is not configured'
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    // Buat JWT token untuk client
+    const token = await new SignJWT({
+      id: client.id,
+      username: client.username,
+      role: 'client'
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('24h')
+      .sign(new TextEncoder().encode(secret));
     
-    return new Response(JSON.stringify({ 
+    const response = new Response(JSON.stringify({ 
       success: true, 
       message: 'Login successful',
       token,
@@ -95,6 +118,13 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
     });
+
+    response.headers.append(
+      'Set-Cookie',
+      `auth_token=${token}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24}; SameSite=Lax`
+    );
+
+    return response;
   } catch (error) {
     return new Response(JSON.stringify({ 
       success: false, 

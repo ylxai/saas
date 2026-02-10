@@ -1,9 +1,24 @@
 // app/api/photos/route.ts
 import { NextRequest } from 'next/server';
-import { getFilesByEventId } from '@/lib/fileService';
+import { getFilesByEventIdForClient } from '@/lib/fileService';
+import { verifyClientToken } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    const client = await verifyClientToken(request);
+
+    if (!client) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Unauthorized'
+      }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
     const eventId = request.nextUrl.searchParams.get('eventId');
     
     if (!eventId) {
@@ -19,7 +34,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Ambil photos dari database
-    const photos = await getFilesByEventId(eventId);
+    const photos = await getFilesByEventIdForClient(eventId, client.id);
 
     return new Response(JSON.stringify({ 
       success: true, 

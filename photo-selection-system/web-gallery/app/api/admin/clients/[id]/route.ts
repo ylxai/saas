@@ -1,6 +1,7 @@
 // app/api/admin/clients/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { query, TABLES } from '@/lib/db';
+import { checkRateLimit, getClientIdentifier } from '@/lib/rateLimiter';
 
 // PUT - Update client
 export async function PUT(
@@ -8,6 +9,18 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const clientId = getClientIdentifier(request);
+    const rateLimit = checkRateLimit(`admin:clients:put:${clientId}`, {
+      maxRequests: 20,
+      windowMs: 60 * 1000,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Too many requests' },
+        { status: 429 }
+      );
+    }
     const { id } = await params;
     const body = await request.json();
     const { name, username, password } = body;
@@ -70,6 +83,18 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const clientId = getClientIdentifier(request);
+    const rateLimit = checkRateLimit(`admin:clients:delete:${clientId}`, {
+      maxRequests: 20,
+      windowMs: 60 * 1000,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Too many requests' },
+        { status: 429 }
+      );
+    }
     const { id } = await params;
 
     const { rowCount } = await query(
