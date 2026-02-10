@@ -17,7 +17,7 @@ export function getDbPool(): Pool {
 }
 
 // Fungsi helper untuk query database
-export async function query(text: string, params?: any[]) {
+export async function query(text: string, params?: (string | number | boolean | Date | null | undefined)[]) {
   const client = await getDbPool().connect();
   try {
     const result = await client.query(text, params);
