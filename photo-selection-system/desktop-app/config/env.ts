@@ -14,6 +14,11 @@ export interface AppConfig {
     accountId: string;
     publicUrl: string;
   };
+  ably?: {
+    apiKey?: string;
+    token?: string;
+    channel?: string;
+  };
   isDevelopment: boolean;
   isProduction: boolean;
 }
@@ -54,6 +59,11 @@ export function getAppConfig(): AppConfig {
   return {
     databaseUrl,
     cloudflareR2,
+    ably: {
+      apiKey: process.env.ABLY_API_KEY,
+      token: process.env.ABLY_TOKEN,
+      channel: process.env.ABLY_CHANNEL || 'processing-logs',
+    },
     isDevelopment: process.env.NODE_ENV !== 'production',
     isProduction: process.env.NODE_ENV === 'production',
   };

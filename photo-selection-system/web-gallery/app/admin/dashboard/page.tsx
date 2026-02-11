@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Ably from 'ably';
 import { useRouter } from 'next/navigation';
 
 interface Client {
@@ -10,6 +11,17 @@ interface Client {
   username: string;
   api_key: string;
   created_at: string;
+}
+
+interface ProcessingLog {
+  id: string;
+  file_id: string;
+  action: string;
+  timestamp: string;
+  status: 'success' | 'failed' | 'in-progress';
+  details?: string;
+  filename?: string;
+  event_name?: string;
 }
 
 export default function AdminDashboard() {
@@ -21,6 +33,8 @@ export default function AdminDashboard() {
   const [formData, setFormData] = useState({ name: '', username: '', password: '' });
   const [modalError, setModalError] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
+  const [logs, setLogs] = useState<ProcessingLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(true);
   const router = useRouter();
 
   const fetchClients = useCallback(async (searchTerm = '') => {
@@ -45,6 +59,39 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchClients();
   }, [fetchClients]);
+
+  const fetchLogs = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/processing-logs?limit=50');
+      const data = await response.json();
+
+      if (data.success) {
+        setLogs(data.data.logs);
+      }
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+    } finally {
+      setLogsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
+  useEffect(() => {
+    const client = new Ably.Realtime({ authUrl: '/api/admin/ably-token', authMethod: 'POST' });
+    const channel = client.channels.get('processing-logs');
+
+    channel.subscribe('processing-log', () => {
+      fetchLogs();
+    });
+
+    return () => {
+      channel.unsubscribe();
+      client.close();
+    };
+  }, [fetchLogs]);
 
   const handleLogout = async () => {
     try {
@@ -255,6 +302,70 @@ export default function AdminDashboard() {
                         >
                           Hapus
                         </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Processing Logs */}
+        <div className="mt-8 bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Processing Logs</h2>
+              <button
+                onClick={fetchLogs}
+                className="text-sm text-blue-600 hover:text-blue-700"
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {logsLoading ? (
+            <div className="p-6 text-center text-gray-500">Memuat logs...</div>
+          ) : logs.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">Belum ada log pemrosesan</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detail</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {logs.map((log) => (
+                    <tr key={log.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(log.timestamp).toLocaleString('id-ID')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {log.event_name || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {log.filename || log.file_id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={
+                          log.status === 'success'
+                            ? 'text-green-600'
+                            : log.status === 'failed'
+                              ? 'text-red-600'
+                              : 'text-yellow-600'
+                        }>
+                          {log.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {log.details || '-'}
                       </td>
                     </tr>
                   ))}

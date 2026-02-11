@@ -43,6 +43,7 @@
   "dependencies": {
     "@neondatabase/serverless": "^0.9.5",
     "@types/sharp": "^0.32.0",
+    "ably": "^2.6.0",
     "axios": "^1.6.0",
     "electron-log": "^5.0.0",
     "electron-store": "^8.1.0",

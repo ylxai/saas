@@ -93,6 +93,19 @@ export async function middleware(request: NextRequest) {
     if (!isAdminRoute && !isAdminApiRoute && !pathname.startsWith('/api/')) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
+  } else {
+    const secret = process.env.CLIENT_JWT_SECRET;
+
+    if (secret) {
+      try {
+        await jwtVerify(
+          clientToken.startsWith('Bearer ') ? clientToken.slice(7) : clientToken,
+          new TextEncoder().encode(secret)
+        );
+      } catch {
+        return NextResponse.redirect(new URL('/login', request.url));
+      }
+    }
   }
 
   return NextResponse.next();

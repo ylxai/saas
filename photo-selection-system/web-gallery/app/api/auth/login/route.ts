@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     response.headers.append(
       'Set-Cookie',
-      `auth_token=${token}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24}; SameSite=Lax`
+      `auth_token=${token}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
     );
 
     return response;
